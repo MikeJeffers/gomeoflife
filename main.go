@@ -30,7 +30,7 @@ func main() {
 	var grid Grid
 	grid.init(width/size, height/size)
 	driver.Main(func(s screen.Screen) {
-		w, err := s.NewWindow(&screen.NewWindowOptions{Width: width, Height: height, Title: "REKT"})
+		w, err := s.NewWindow(&screen.NewWindowOptions{Width: width, Height: height, Title: "GOme of Life"})
 		if err != nil {
 			log.Fatal(err)
 			return
