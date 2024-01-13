@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"math/rand"
+	"sync"
 )
 
 /*
@@ -88,10 +89,15 @@ func (g *Grid) getNeighbors(x, y int) []Cell {
 func (g *Grid) nextState() {
 	cellsCopy := make([]Cell, len(g.cells))
 	copy(cellsCopy, g.cells)
-	// This is the embarrassingly parallelizable part, lets implement serial first
+	var wg sync.WaitGroup
+	wg.Add(len(g.cells))
 	for i, cell := range g.cells {
-		neighbors := g.getNeighbors(cell.x, cell.y)
-		cellsCopy[i].nextState(neighbors)
+		go func(i int, cell Cell) {
+			defer wg.Done()
+			neighbors := g.getNeighbors(cell.x, cell.y)
+			cellsCopy[i].nextState(neighbors)
+		}(i, cell)
 	}
+	wg.Wait()
 	g.cells = cellsCopy
 }
