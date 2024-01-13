@@ -13,6 +13,7 @@ import (
 
 func runGrid(send, recv chan string, grid *Grid) {
 	go func() {
+		defer close(send)
 		for msg := range recv {
 			if msg == "end" {
 				return
@@ -52,7 +53,7 @@ func main() {
 				for _, cell := range grid.cells {
 					x, y, state := cell.drawState()
 					if state == 1 {
-						w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), color.RGBA{0x00, 0xff, 0xff, 0x22}, screen.Over)
+						w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), color.RGBA{0x00, 0xff, 0xff, 0xff}, screen.Over)
 					}
 				}
 				w.Publish()
