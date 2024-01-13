@@ -87,6 +87,8 @@ func (g *Grid) getNeighbors(x, y int) []Cell {
 }
 
 func (g *Grid) nextState() {
+	// Store a copy that will be the next state
+	// Leaving original array unmutated
 	cellsCopy := make([]Cell, len(g.cells))
 	copy(cellsCopy, g.cells)
 	var wg sync.WaitGroup

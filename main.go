@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -11,6 +10,18 @@ import (
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/lifecycle"
 )
+
+func runGrid(send, recv chan string, grid *Grid) {
+	go func() {
+		for msg := range recv {
+			if msg == "end" {
+				return
+			}
+			grid.nextState()
+			send <- "updated"
+		}
+	}()
+}
 
 func main() {
 	width := 1000
@@ -26,26 +37,27 @@ func main() {
 		}
 		defer w.Release()
 
-		ticker := time.NewTicker(1 * time.Second)
-		doneChan := make(chan bool)
+		send := make(chan string)
+		recv := make(chan string)
+		runGrid(recv, send, &grid)
+		send <- "go!"
 
 		go func() {
 			for {
-				select {
-				case t := <-ticker.C:
-					fmt.Println("Tick at", t)
-					grid.nextState()
-					w.Fill(image.Rect(0, 0, width, height), color.RGBA{0x00, 0x00, 0x00, 0xff}, screen.Src)
-					for _, cell := range grid.cells {
-						x, y, state := cell.drawState()
-						if state == 1 {
-							w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), color.RGBA{0x00, 0xff, 0xff, 0x22}, screen.Over)
-						}
-					}
-					w.Publish()
-				case <-doneChan:
+				_, ok := <-recv
+				if !ok {
 					return
 				}
+				w.Fill(image.Rect(0, 0, width, height), color.RGBA{0x00, 0x00, 0x00, 0xff}, screen.Over)
+				for _, cell := range grid.cells {
+					x, y, state := cell.drawState()
+					if state == 1 {
+						w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), color.RGBA{0x00, 0xff, 0xff, 0x22}, screen.Over)
+					}
+				}
+				w.Publish()
+				time.Sleep(500 * time.Millisecond)
+				send <- "ready"
 			}
 		}()
 
@@ -53,11 +65,9 @@ func main() {
 			switch e := w.NextEvent().(type) {
 			case lifecycle.Event:
 				if e.To == lifecycle.StageDead {
-					doneChan <- true
+					send <- "end"
 					return
 				}
-				// case paint.Event:
-				// 	w.Publish()
 			}
 		}
 	})
