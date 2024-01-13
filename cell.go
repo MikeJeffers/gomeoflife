@@ -36,24 +36,16 @@ func getStateByValue(value int) State {
 		return DEAD
 	}
 }
-func countMatchingState(neighbors []Cell, state State) int {
-	liveNeighbors := 0
-	for _, neighbor := range neighbors {
-		if neighbor.state.getValue() == state.getValue() {
-			liveNeighbors += 1
-		}
-	}
-	return liveNeighbors
-}
 func mapNeighborStateCounts(neighbors []Cell) map[State]int {
-	m := make(map[State]int)
-	m[ALIVE] = 0
-	m[DEAD] = 0
-	m[ANOTHER] = 0
-	for _, neighbor := range neighbors {
-		m[neighbor.state] += 1
+	stateCounts := map[State]int{
+		DEAD:    0,
+		ALIVE:   0,
+		ANOTHER: 0,
 	}
-	return m
+	for _, neighbor := range neighbors {
+		stateCounts[neighbor.state] += 1
+	}
+	return stateCounts
 }
 
 func (s *AliveState) getValue() int {
