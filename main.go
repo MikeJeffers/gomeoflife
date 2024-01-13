@@ -52,9 +52,14 @@ func main() {
 				w.Fill(image.Rect(0, 0, width, height), color.RGBA{0x00, 0x00, 0x00, 0xff}, screen.Over)
 				for _, cell := range grid.cells {
 					x, y, state := cell.drawState()
-					if state == 1 {
-						w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), color.RGBA{0x00, 0xff, 0xff, 0xff}, screen.Over)
+					if state == 0 {
+						continue
 					}
+					c := color.RGBA{0x00, 0xff, 0xff, 0xff}
+					if state == 2 {
+						c = color.RGBA{0xff, 0x00, 0xff, 0xff}
+					}
+					w.Fill(image.Rect(x*size, y*size, (x+1)*size, (y+1)*size), c, screen.Over)
 				}
 				w.Publish()
 				time.Sleep(500 * time.Millisecond)

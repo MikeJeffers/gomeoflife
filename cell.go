@@ -6,36 +6,100 @@ import (
 	"sync"
 )
 
+type State interface {
+	nextState([]Cell) State
+	getValue() int
+}
+type AliveState struct {
+	value int
+}
+type DeadState struct {
+	value int
+}
+type AnotherState struct {
+	value int
+}
+
+var DEAD = &DeadState{0}
+var ALIVE = &AliveState{1}
+var ANOTHER = &AnotherState{2}
+
+func getStateByValue(value int) State {
+	switch value {
+	case 0:
+		return DEAD
+	case 1:
+		return ALIVE
+	case 2:
+		return ANOTHER
+	default:
+		return DEAD
+	}
+}
+func countMatchingState(neighbors []Cell, state State) int {
+	liveNeighbors := 0
+	for _, neighbor := range neighbors {
+		if neighbor.state.getValue() == state.getValue() {
+			liveNeighbors += 1
+		}
+	}
+	return liveNeighbors
+}
+func mapNeighborStateCounts(neighbors []Cell) map[State]int {
+	m := make(map[State]int)
+	m[ALIVE] = 0
+	m[DEAD] = 0
+	m[ANOTHER] = 0
+	for _, neighbor := range neighbors {
+		m[neighbor.state] += 1
+	}
+	return m
+}
+
+func (s *AliveState) getValue() int {
+	return s.value
+}
+func (s *DeadState) getValue() int {
+	return s.value
+}
+func (s *AnotherState) getValue() int {
+	return s.value
+}
+
+func (s *AliveState) nextState(neighbors []Cell) State {
+	counts := mapNeighborStateCounts(neighbors)
+	if counts[ALIVE] < 2 || counts[ALIVE] > 3 {
+		return DEAD
+	}
+	return ALIVE
+}
+
+func (s *DeadState) nextState(neighbors []Cell) State {
+	counts := mapNeighborStateCounts(neighbors)
+	if counts[ALIVE] == 3 {
+		return ALIVE
+	}
+	return DEAD
+}
+
+func (s *AnotherState) nextState(neighbors []Cell) State {
+	return ANOTHER
+}
+
 /*
 Defines a cell in a cellular automata system
-For now this will implement a vanilla conways game of life
-0 = DEAD
-1 = ALIVE
-TBD other states and rules w/ some elaborate config driven system
 */
 type Cell struct {
-	x, y, state int
+	x, y  int
+	state State
 }
 
 func (c *Cell) drawState() (int, int, int) {
-	return c.x, c.y, c.state
+	return c.x, c.y, c.state.getValue()
 }
 
 func (c *Cell) nextState(neighbors []Cell) {
-	liveNeighbors := 0
-	for _, neighbor := range neighbors {
-		liveNeighbors += neighbor.state
-	}
-	// Typical Conway ruleset for moores neighborhood
-	if c.state == 1 {
-		if liveNeighbors < 2 || liveNeighbors > 3 {
-			c.state = 0
-		}
-	} else {
-		if liveNeighbors == 3 {
-			c.state = 1
-		}
-	}
+	c.state = c.state.nextState(neighbors)
 }
 
 /*
@@ -54,10 +118,13 @@ func (g *Grid) init(cols, rows int) {
 		for x := 0; x < g.cols; x++ {
 			initialState := 0
 			// Random seed
-			if rand.Float32() > 0.7 {
+			r := rand.Float32()
+			if r > 0.7 {
 				initialState = 1
+			} else if r < 0.05 {
+				initialState = 2
 			}
-			g.cells = append(g.cells, Cell{x, y, initialState})
+			g.cells = append(g.cells, Cell{x, y, getStateByValue(initialState)})
 		}
 	}
 }
